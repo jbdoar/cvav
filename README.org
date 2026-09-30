@@ -1,2 +1,79 @@
 #+title: cvav
-Control Voltage Audio/Video
+Control Voltage Audio/Video — a playground for video feedback experiments.
+
+* Experiment 001: Crutchfield feedback
+A monochrome webcam drives an iterated image model with persistence, rotation,
+zoom, spatial diffusion, gain, and luminance inversion. OpenCV displays the raw
+source and feedback side by side, with a separate window of parameter sliders.
+See [[file:docs/crutchfield.org][model notes and equations]] for its relationship to the paper.
+
+* Experiment 002: color feedback
+Full-color webcam input with coupled color feedback. Launch with:
+
+#+begin_src sh
+.venv/bin/python -m cvav --experiment color --camera 0
+#+end_src
+
+The same controls are joined by *Color cycle* (red to green to blue, or reverse)
+and *Feedback saturation*. Try waving something colorful, then lower camera
+input to watch the colors circulate through the feedback. Set color cycle to
+zero and saturation to 1 for independent color channels. The default command
+still runs experiment 001. Both experiments share pause, reset, and snapshots.
+
+#+begin_src sh
+.venv/bin/python -m cvav --experiment color --synthetic
+.venv/bin/python -m cvav --experiment color --synthetic --headless --frames 180 --output captures/color.png
+#+end_src
+
+* Run
+Use a desktop terminal with access to the USB webcam:
+
+#+begin_src sh
+python3 -m venv .venv
+.venv/bin/python -m pip install -e .
+.venv/bin/python -m cvav
+#+end_src
+
+Camera 0 is the default. Select another index or a Linux device explicitly:
+
+#+begin_src sh
+.venv/bin/python -m cvav --camera /dev/video2
+.venv/bin/python -m cvav --synthetic
+#+end_src
+
+Use =opencv-python= with GUI support, not =opencv-python-headless=. On Linux,
+a desktop display and OpenCV's GUI system libraries are required. If the camera
+cannot open, check device permissions, whether another app is using it, and the
+camera index. No camera is silently replaced with synthetic input.
+
+| Key       | Action                         |
+|-----------+--------------------------------|
+| q / Esc   | Quit                           |
+| Space     | Pause/resume                   |
+| r         | Clear feedback to neutral gray |
+| d         | Restore default sliders        |
+| s         | Save both views in captures/   |
+
+Each slider displays its name, current value in useful units, and a short
+explanation. Click or drag its track to adjust it. Parameters are per iteration.
+
+* Reproducible checks without a camera
+#+begin_src sh
+.venv/bin/python -m unittest discover -s tests -v
+.venv/bin/python -m cvav --synthetic --headless --frames 180 --output captures/synthetic.png
+#+end_src
+
+=--width=, =--height=, and =--fps= set the processing dimensions and target rate.
+=--frames= limits a run; =--output= saves its final pair of images. Headless mode
+requires a frame limit and uses the default model parameters.
+
+* Reference
+The =reference/= directory contains local papers, extracted text, and planning
+notes. It is ignored by Git; the PDF and text links below require those local files.
+
+- [[file:reference/Crutchfield.PhysicaD1984.pdf][Original paper]]
+- [[file:reference/Crutchfield.PhysicaD1984.txt][Extracted plain text]] (original OCR, equations may be garbled)
+- [[file:docs/crutchfield.org][Checked equations and implementation notes]]
+
+The numerical feedback engine is separate from capture/UI so future experiments
+can add other cameras, further models, and sources.

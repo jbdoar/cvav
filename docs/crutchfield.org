@@ -1,0 +1,109 @@
+#+title: Experiment 001 — Crutchfield video feedback
+
+* Source and extraction
+J. P. Crutchfield, /Space-time dynamics in video feedback/, Physica D 10
+(1984), 229–245. The supplied [[file:../reference/Crutchfield.PhysicaD1984.pdf][PDF]] is the source of truth.
+[[file:../reference/Crutchfield.PhysicaD1984.txt][Plain text]] was extracted with Poppler:
+
+#+begin_src sh
+pdftotext -layout reference/Crutchfield.PhysicaD1984.pdf reference/Crutchfield.PhysicaD1984.txt
+#+end_src
+
+This preserves page breaks and the two-column layout. Embedded OCR contains
+errors, particularly in equations, and does not describe figures. The equations
+below were checked visually against printed page 235 (PDF page 7); these notes
+are a selective transcription and implementation guide, not a corrected full text.
+
+* Discrete model
+The paper uses biased intensity I in [-1,1], with -1 black and +1 white.
+Equation (1) combines storage and an optical image transform:
+
+\[ I_{n+1}(\mathbf{x}) = L I_n(\mathbf{x}) + s f I_n(b R\mathbf{x}), \]
+\[ R = \begin{pmatrix}\cos\phi & \sin\phi\\-\sin\phi & \cos\phi\end{pmatrix}. \]
+
+L controls persistence, f is optical gain, and s is +1 or -1 for luminance
+inversion. The paper specifies zero intensity outside its bounded image domain.
+In biased coordinates that is neutral gray.
+
+Equation (2) adds Gaussian spatial coupling:
+
+\[ \langle I_n(\mathbf{x})\rangle_x =
+\int_{\mathbb{R}^2} d\mathbf{y}\,I_n(\mathbf{y})
+\exp\left[-\frac{|\mathbf{y}-\mathbf{x}|^2}{2(\sigma_f+\sigma_v)^2}\right]. \]
+
+Its printed kernel has no normalization factor. Equation (3) is
+
+\[ I_{n+1}(\mathbf{x}) = L I_n(\mathbf{x})
++ L'\langle I_n(\mathbf{x})\rangle_x + s f I_n(bR\mathbf{x}). \]
+
+Equation (4) further replaces the first image by a weighted history
+\(\langle I_n\rangle_\tau = \sum_{i=0}^{\infty} I_{n-i} L^i\).
+Later sections discuss color coupling and a reaction-diffusion model.
+
+* Implemented approximation
+Experiment 001 implements equation (3), with a normalized discrete Gaussian,
+bilinear resampling, and additions for live input and bounded display values:
+
+\[ I_{n+1}=\operatorname{clip}_{[-1,1]}\left(
+L I_n + d\,G_\sigma * I_n + s f W_{z,\theta}(I_n)
++ a C_n + \beta\right). \]
+
+C is grayscale webcam input mapped to [-1,1]. Its coefficient a is additive
+forcing, not an alpha blend. Set it to zero after introducing a seed to explore
+an autonomous feedback loop. Beta is brightness. Clipping supplies a simple
+saturating nonlinearity motivated by the appendix; it is not a calibrated
+vidicon response. This is not a reproduction of all the paper's simulations.
+
+The diffusion slider is d (analogous to L'), and blur sets sigma in pixels.
+A normalized Gaussian separates kernel width from gain; its boundary is reflected.
+The warp uses zero outside the frame, as in the paper. Zoom z is *visible image
+magnification*: source coordinates are divided by z, so b=1/z in the paper's
+sampling expression. Positive angles rotate the displayed image counterclockwise;
+OpenCV uses downward-positive pixel y. Rotation is in pixel coordinates, without
+stretching a rectangular image to the paper's normalized square.
+
+We use one previous image, not equation (4)'s full history, and monochrome rather
+than the color-coupled model. Each processed frame is one discrete iteration.
+The target is 30 iterations/second; slower capture/computation changes wall-clock
+speed, not the map coefficients. Headless runs execute as fast as possible.
+
+* Things to try
+- Wave a hand with the defaults, then lower camera input to zero.
+- Try gain near 100%, zoom just above 1, and a small rotation for spirals.
+- Toggle inversion and vary persistence for alternating light/dark structures.
+- Increase blur and diffusion to change spatial coupling.
+- Strong gain or brightness can saturate the image. Clear with =r=, restore
+  controls with =d=, or reduce gain and reintroduce the camera.
+
+* Experiment 002: color feedback
+Run with =--experiment color=. The state and camera input now have three
+channels. OpenCV stores them in BGR order; capture, processing, display, and
+PNG output all retain that order.
+
+The paper's equation (5) extends scalar intensity to an RGB vector and uses
+matrices to couple channels in the storage and diffusion terms. This experiment
+is inspired by that linear coupling idea, but places the adjustable coupling
+in the transformed feedback path. It retains the one-frame approximation of
+experiment 001 rather than implementing equation (5)'s full temporal history.
+
+In RGB notation, let P(R,G,B)=(B,R,G). Positive color cycle moves red into green,
+green into blue, and blue into red; negative values reverse the cycle. With
+c in [-1,1], the mixing matrix is
+
+\[ M_c=(1-|c|)\,\mathrm{Id}+|c|\,P_{\operatorname{sign}(c)}. \]
+
+After mixing, saturation t acts as a linear color transform:
+\(S_t(v)=\ell(v)\mathbf{1}+t(v-\ell(v)\mathbf{1})\), where
+\(\ell(v)=0.299v_R+0.587v_G+0.114v_B\).
+The feedback term becomes \(sf S_t(M_c W(I_n))\); storage, diffusion, camera
+injection, brightness, and final clipping are otherwise unchanged and act
+per channel. These operations work in biased webcam/display values, not
+radiometrically linear light. Saturation is an artistic extension.
+
+At cycle=0 and saturation=1, the channels evolve independently under the
+monochrome model. At saturation=0 only the transformed feedback is grayscale;
+the live camera still supplies color. Inversion complements all three channels.
+The default cycle is +12% per iteration. Try reducing camera input after moving
+a colorful object, then reverse the cycle to change the sequence of colors in
+its trails. Strong coupling tends to mix colors toward gray; increased
+saturation can restore chroma, while high gain can drive channels to clipping.
