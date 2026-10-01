@@ -1,6 +1,21 @@
 #+title: cvav
 Control Voltage Audio/Video — a playground for video feedback experiments.
 
+* Browser demo
+A parallel JavaScript/WebGL version lives in =web/=. It includes both experiments,
+synthetic or camera input, labeled sliders, keyboard parameter control, PNG
+snapshots, and clean full-screen output. No build step is required.
+
+#+begin_src sh
+python3 -m http.server 8000 --bind 127.0.0.1 --directory web
+#+end_src
+
+Open http://localhost:8000. Camera access is opt-in and all video processing stays
+in the browser. See [[file:web/README.md][browser setup, tests, and GitHub Pages deployment]] and
+[[file:docs/implementations.org][parallel implementation structure]]. The GitHub Pages workflow publishes only
+browser runtime files after its tests pass; enable GitHub Actions as the Pages
+source in repository settings before deploying.
+
 * Experiment 001: Crutchfield feedback
 A monochrome webcam drives an iterated image model with persistence, rotation,
 zoom, spatial diffusion, gain, and luminance inversion. OpenCV displays the raw

@@ -1,0 +1,60 @@
+#+title: Parallel implementations
+
+* Layout
+Keep implementation-specific code and tools together while sharing the model
+specification and experiment names. The existing Python package stays where it
+is, so existing commands and installations continue working.
+
+#+begin_example
+cvav/                   Python/OpenCV implementation and desktop UI
+pyproject.toml          Python package/dependencies
+tests/                 Python tests
+web/                    JavaScript/WebGL implementation and browser UI
+  shaders/              GLSL blur, feedback, and display passes
+  tests/                Browser tests and Python-generated reference cases
+  package.json          Development tools only; no runtime dependencies
+docs/                  Shared equations and implementation notes
+.github/workflows/      Test/deploy automation
+reference/              Local papers, extracted text, plans; Git-ignored
+#+end_example
+
+Avoid a shared runtime abstraction across Python and JavaScript. Share the
+mathematical contract: parameter names, units, defaults, sign conventions,
+boundaries, and reference cases. Both versions implement experiments 001 and
+002. A new model should identify which implementations support it.
+
+* Shader port
+The browser keeps signed RGB intensity in RGBA16F framebuffer textures. Two
+alternating state targets prevent reading and writing the same texture. A
+separable Gaussian uses two temporary targets with reflected boundaries.
+The feedback pass combines storage, blur, warped/color-coupled history, new
+input, and brightness, then clips each channel to [-1,1]. The display pass maps
+that state to [0,1]. No CPU readback is needed in the animation loop.
+
+Pixel-space inverse rotation and zoom match the desktop convention, including
+neutral-gray samples outside the frame. The Gaussian uses normalized weights
+truncated at approximately four standard deviations. Sigma zero bypasses blur.
+Color data is RGB in WebGL and BGR in OpenCV; fixtures convert that ordering.
+
+Differences are deliberate and documented:
+- Float16 GPU state versus float32 NumPy state.
+- Full-fraction shader bilinear interpolation versus OpenCV's quantized warp
+  interpolation table.
+- Browser luma is computed as a floating-point dot product; OpenCV first rounds
+  grayscale camera pixels to uint8.
+- Browser camera scaling uses canvas interpolation; Python uses OpenCV resize.
+- A browser synthetic scene intended for play replaces the desktop test pattern.
+- The browser starts in color mode; the desktop CLI defaults to monochrome.
+
+Feedback can amplify small numerical differences, so long trajectories need
+not match pixel-for-pixel. Small one-step reference cases test the shared
+operations, and browser tests exercise the actual shaders and UI.
+
+* Hosting
+Only the browser runtime files are published to GitHub Pages. The Pages action
+runs tests first, then uploads an explicit static-file allowlist. See
+[[file:../web/README.md][web setup and deployment instructions]]. No server-side Python is required.
+
+The local =reference/= directory must remain ignored. Do not put papers or
+planning notes into the Pages artifact. The shared mathematical notes in this
+=docs/= directory remain part of the repository.

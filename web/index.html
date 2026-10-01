@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#111713">
+  <meta name="description" content="A playable video feedback instrument. Make spirals, color trails, and little universes in your browser.">
+  <title>cvav — a little feedback goes a long way</title>
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <header>
+    <a class="wordmark" href="./">cvav<span class="led" aria-hidden="true"></span></a>
+    <span class="tagline">CONTROL VOLTAGE / AUDIO VIDEO</span>
+    <a class="source-link" href="https://github.com/jbdoar/cvav" target="_blank" rel="noreferrer">Source ↗</a>
+  </header>
+  <main>
+    <section class="intro">
+      <div><p class="eyebrow">AN EXPERIMENT IN SEEING</p><h1>A little feedback<br>goes a long way.</h1></div>
+      <p>An image remembers itself. Rotate it, feed it back, let the colors wander.<br>Start with the moving shapes, or step into the loop with your camera.</p>
+    </section>
+    <div class="instrument">
+      <section class="stage" aria-label="Video monitor">
+        <div class="monitor-heading"><span><span class="led" aria-hidden="true"></span> FEEDBACK MONITOR</span><span id="rate">STARTING</span></div>
+        <div id="screen"><canvas id="output" width="640" height="480" aria-label="Rendered feedback"></canvas></div>
+        <div class="transport">
+          <button id="pause" disabled>Pause</button><button id="clear" disabled>Clear image</button>
+          <button id="snapshot" disabled>Snapshot</button><button id="fullscreen" disabled>Full screen ↗</button>
+        </div>
+        <div class="source-strip">
+          <canvas id="preview" width="160" height="120" aria-label="Input preview"></canvas>
+          <div class="source-options"><label for="source">INPUT SIGNAL</label>
+            <select id="source" disabled><option value="synthetic">Moving shapes</option><option value="camera">My camera</option></select>
+            <button id="camera" disabled>Enable camera</button>
+            <small>Your camera stays in your browser. No video is uploaded.</small>
+          </div>
+        </div>
+        <p id="status" role="status">Warming up the feedback loop…</p>
+        <p class="play-note">Try a little zoom and rotation. Turn input down to zero and let the image live on its own.</p>
+      </section>
+      <aside class="console" aria-label="Feedback controls">
+        <div class="console-heading"><div><p class="eyebrow">THE CONTROL ROOM</p><h2>Make a small change.</h2></div><button id="defaults" disabled>Reset knobs</button></div>
+        <label class="mode-label" for="experiment">Experiment</label>
+        <select id="experiment" disabled><option value="color">002 / Color feedback</option><option value="mono">001 / Monochrome</option></select>
+        <div id="parameters"></div>
+        <div class="keyboard-note"><span id="selected">Z / Zoom</span><p>Tap a parameter’s letter, then <kbd>+</kbd> / <kbd>−</kbd>. Hold to keep moving. <kbd>Shift</kbd> for finer steps.<br><kbd>Space</kbd> pause · <kbd>R</kbd> clear · <kbd>D</kbd> reset</p></div>
+      </aside>
+    </div>
+    <details><summary>What’s happening here?</summary><p>Inspired by J. P. Crutchfield’s 1984 video-feedback models: each image combines the last frame, a softened copy, a rotated and scaled copy, and new input. Color channels can feed into one another. Clipping keeps the signal bounded. These are digital approximations of a camera looking at its own monitor.</p><p>Processing runs locally on your graphics hardware. The loop targets 30 iterations per second and stops while this tab is hidden. Use headphones for your own soundtrack; this experiment doesn’t request microphone access.</p></details>
+  </main>
+  <footer><span>cvav / an open-ended video playground</span><span>Made for getting a little lost.</span></footer>
+  <video id="camera-video" autoplay playsinline muted hidden></video>
+  <noscript>This instrument needs JavaScript and WebGL 2. Enable JavaScript to play.</noscript>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>

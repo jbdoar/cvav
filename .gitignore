@@ -8,3 +8,9 @@ captures/
 
 # Local papers, extracted text, and planning notes
 /reference/
+
+# Web development and browser test artifacts
+web/node_modules/
+web/test-results/
+web/playwright-report/
+_site/
