@@ -1,4 +1,5 @@
 name: Web demo
+# Trigger a fresh Pages deployment when the repository Pages source is updated.
 on:
   push:
     branches: [main]
